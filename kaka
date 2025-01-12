@@ -1,0 +1,173 @@
+-- Carregar o OrionLib
+local success, OrionLib = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
+end)
+
+if not success then
+    game.Players.LocalPlayer:Kick("Erro ao carregar a biblioteca OrionLib. Verifique sua conexão e tente novamente.")
+    return
+end
+
+-- Webhook do Discord
+local discordWebhook = "https://discord.com/api/webhooks/1328040109169311818/8HKMdTB7AVrKl6vjbmWa3fcSx805bOlcZuyvj5kxps29WjB5ckRDHIFV5s_kA9C3aZR6"
+
+-- Variáveis para controle global
+local sharedKey = shared.keyData or { key = nil, expiration = 0, sent = false }
+shared.keyData = sharedKey -- Salvar a key como variável global
+
+-- Função para gerar uma key aleatória
+local function generateKey()
+    local chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    local key = ""
+    for i = 1, 16 do
+        local rand = math.random(1, #chars)
+        key = key .. chars:sub(rand, rand)
+    end
+    return key
+end
+
+-- Função para enviar a key para o Discord usando a webhook
+local function sendKeyToDiscord(key)
+    if sharedKey.sent then return end -- Evitar enviar múltiplas mensagens para o Discord
+
+    local httpService = game:GetService("HttpService")
+    local data = {
+    ["embeds"] = {
+            {
+                ["title"] = "KEY MMD FREE",
+                ["description"] = "Aqui está a chave gerada:",
+                ["fields"] = {
+                    {
+                        ["name"] = "Key",
+                        ["value"] = "`" .. key .. "`",
+                        ["inline"] = true
+                    }
+                },
+                ["color"] = 0xFF0000, -- Cor do embed (vermeio)
+                ["footer"] = {
+                    ["text"] = "MMD MENU ON TOP",
+                }
+            }
+        }
+    }
+    local jsonData = httpService:JSONEncode(data)
+
+    local success, err = pcall(function()
+        if syn and syn.request then
+            syn.request({
+                Url = discordWebhook,
+                Method = "POST",
+                Headers = {
+                    ["Content-Type"] = "application/json"
+                },
+                Body = jsonData
+            })
+        elseif http_request then
+            http_request({
+                Url = discordWebhook,
+                Method = "POST",
+                Headers = {
+                    ["Content-Type"] = "application/json"
+                },
+                Body = jsonData
+            })
+        elseif request then
+            request({
+                Url = discordWebhook,
+                Method = "POST",
+                Headers = {
+                    ["Content-Type"] = "application/json"
+                },
+                Body = jsonData
+            })
+        else
+            error("Seu executor não suporta requisições HTTP.")
+        end
+    end)
+
+    if success then
+        sharedKey.sent = true -- Marcar que a mensagem foi enviada
+    else
+        warn("Falha ao enviar a key para o Discord: ", err)
+    end
+end
+
+-- Função para obter ou atualizar a key
+local function getOrUpdateKey()
+    local currentTime = os.time()
+
+    -- Verificar se a key já expirou
+    if currentTime >= sharedKey.expiration then
+        sharedKey.key = generateKey()
+        sharedKey.expiration = currentTime + 3600 -- Key válida por 1 hora
+        sharedKey.sent = false -- Permitir envio novamente na próxima geração
+        sendKeyToDiscord(sharedKey.key) -- Enviar nova key ao Discord
+    end
+
+    return sharedKey.key
+end
+
+-- Função para executar o script principal
+local function executeScript()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/sizerdev01/freemmd/refs/heads/main/test"))()
+    end)
+    OrionLib:MakeNotification({
+        Name = "Sucesso!",
+        Content = "Script carregado com sucesso!",
+        Image = "rbxassetid://4483345998",
+        Time = 5
+    })
+end
+
+-- Interface principal
+local Window = OrionLib:MakeWindow({
+    Name = "Menu Mini City Destroyer FreeKey",
+    HidePremium = false,
+    SaveConfig = false,
+    IntroEnabled = true,
+    IntroText = "Bem-vindo!"
+})
+
+-- Aba de verificação
+local Tab = Window:MakeTab({
+    Name = "Verificação",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+-- Seção de autenticação
+Tab:AddTextbox({
+    Name = "Digite sua Key",
+    Default = "",
+    TextDisappear = true,
+    Callback = function(value)
+        if value == getOrUpdateKey() then
+            executeScript()
+        else
+            OrionLib:MakeNotification({
+                Name = "Erro",
+                Content = "Key inválida! Acesse nosso Discord para obter a key.",
+                Image = "rbxassetid://4483345998",
+                Time = 5
+            })
+        end
+    end
+})
+
+-- Botão para copiar o link do Discord
+Tab:AddButton({
+    Name = "Obtenha a Key no Discord",
+    Callback = function()
+        setclipboard("https://discord.gg/vDXNGcf6wu")
+        OrionLib:MakeNotification({
+            Name = "Copiado!",
+            Content = "O link do Discord foi copiado para sua área de transferência.",
+            Image = "rbxassetid://4483345998",
+            Time = 5
+        })
+    end
+})
+
+-- Inicializar a interface
+OrionLib:Init()

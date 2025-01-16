@@ -1,4 +1,4 @@
--- Carregar o OrionLib
+-- Carregar a OrionLib
 local success, OrionLib = pcall(function()
     return loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Orion/main/source"))()
 end)
@@ -15,18 +15,18 @@ local discordWebhook = "https://discord.com/api/webhooks/1328040109169311818/8HK
 local sharedKey = shared.keyData or { key = nil, expiration = 0, sent = false }
 shared.keyData = sharedKey -- Salvar a key como variável global
 
--- Função para gerar uma key aleatória
+-- Função para gerar uma chave aleatória de 4 caracteres
 local function generateKey()
     local chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
     local key = ""
-    for i = 1, 16 do
+    for i = 1, 4 do
         local rand = math.random(1, #chars)
         key = key .. chars:sub(rand, rand)
     end
     return key
 end
 
--- Função para enviar a key para o Discord usando a webhook
+-- Função para enviar a chave para o Discord usando a webhook
 local function sendKeyToDiscord(key)
     if sharedKey.sent then return end -- Evitar enviar múltiplas mensagens para o Discord
 
@@ -88,20 +88,20 @@ local function sendKeyToDiscord(key)
     if success then
         sharedKey.sent = true -- Marcar que a mensagem foi enviada
     else
-        warn("Falha ao enviar a key para o Discord: ", err)
+        warn("Falha ao enviar a chave para o Discord: ", err)
     end
 end
 
--- Função para obter ou atualizar a key
+-- Função para obter ou atualizar a chave
 local function getOrUpdateKey()
     local currentTime = os.time()
 
-    -- Verificar se a key já expirou
+    -- Verificar se a chave já expirou
     if currentTime >= sharedKey.expiration then
         sharedKey.key = generateKey()
-        sharedKey.expiration = currentTime + 3600 -- Key válida por 1 hora
+        sharedKey.expiration = currentTime + 1800 -- Chave válida por 30 minutos (1800 segundos)
         sharedKey.sent = false -- Permitir envio novamente na próxima geração
-        sendKeyToDiscord(sharedKey.key) -- Enviar nova key ao Discord
+        sendKeyToDiscord(sharedKey.key) -- Enviar nova chave ao Discord
     end
 
     return sharedKey.key
